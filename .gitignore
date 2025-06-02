@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environment
+src/myenv/
+venv/
+.env
+
+# VSCode
+.vscode/
+
+# Docker
+*.pid
+
+# Milvus, MinIO, Etcd volumes
+volumes/
+
