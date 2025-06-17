@@ -1,14 +1,13 @@
-# Import các thư viện cần thiết
-from langchain.tools.retriever import create_retriever_tool  # Tạo công cụ tìm kiếm
-from langchain_openai import ChatOpenAI  # Model ngôn ngữ OpenAI
-from langchain.agents import AgentExecutor, create_openai_functions_agent  # Tạo và thực thi agent
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder  # Xử lý prompt
-from seed_data import seed_milvus, connect_to_milvus  # Kết nối với Milvus
-from langchain_community.callbacks.streamlit import StreamlitCallbackHandler  # Xử lý callback cho Streamlit
-from langchain_community.chat_message_histories import StreamlitChatMessageHistory  # Lưu trữ lịch sử chat
-from langchain.retrievers import EnsembleRetriever  # Kết hợp nhiều retriever
-from langchain_community.retrievers import BM25Retriever  # Retriever dựa trên BM25
-from langchain_core.documents import Document  # Lớp Document
+from langchain.tools.retriever import create_retriever_tool
+from langchain_openai import ChatOpenAI  
+from langchain.agents import AgentExecutor, create_openai_functions_agent 
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder  
+from seed_data import seed_milvus, connect_to_milvus 
+from langchain_community.callbacks.streamlit import StreamlitCallbackHandler 
+from langchain_community.chat_message_histories import StreamlitChatMessageHistory  
+from langchain.retrievers import EnsembleRetriever  
+from langchain_community.retrievers import BM25Retriever  
+from langchain_core.documents import Document 
 from dotenv import load_dotenv
 import os
 
@@ -50,7 +49,6 @@ def get_retriever(collection_name: str = "movie2") -> EnsembleRetriever:
         
     except Exception as e:
         print(f"Lỗi khi khởi tạo retriever: {str(e)}")
-        # Trả về retriever với document mặc định nếu có lỗi
         default_doc = [
             Document(
                 page_content="Có lỗi xảy ra khi kết nối database. Vui lòng thử lại sau.",
@@ -59,7 +57,6 @@ def get_retriever(collection_name: str = "movie2") -> EnsembleRetriever:
         ]
         return BM25Retriever.from_documents(default_doc)
 
-# Tạo công cụ tìm kiếm cho agent
 tool = create_retriever_tool(
     get_retriever(),
     "find",
@@ -68,7 +65,6 @@ tool = create_retriever_tool(
 
 def get_llm_and_agent(_retriever, model_choice="gpt4") -> AgentExecutor:
 
-    # Khởi tạo ChatOpenAI dựa trên lựa chọn model
     if model_choice == "gpt4":
         llm = ChatOpenAI(
             temperature=0,
@@ -76,7 +72,6 @@ def get_llm_and_agent(_retriever, model_choice="gpt4") -> AgentExecutor:
             model='gpt-4',
             api_key=OPENAI_API_KEY)
     tools = [tool]
-    # Thiết lập prompt template cho agent
     system = """You are an expert at AI. Your name is FilmAI. You are a helpful assistant that can answer questions about the movie ."""
     prompt = ChatPromptTemplate.from_messages([
         ("system", system),
@@ -85,10 +80,8 @@ def get_llm_and_agent(_retriever, model_choice="gpt4") -> AgentExecutor:
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ])
 
-    # Tạo và trả về agent
     agent = create_openai_functions_agent(llm=llm, tools=tools, prompt=prompt)
     return AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-# Khởi tạo retriever và agent
 retriever = get_retriever()
 agent_executor = get_llm_and_agent(retriever)

@@ -16,17 +16,14 @@ def load_data_from_local(filename: str, directory: str) -> tuple:
     with open(file_path, 'r') as file:
         data = json.load(file)
     print(f'Data loaded from {file_path}')
-    # Chuyển tên file thành tên tài liệu (bỏ đuôi .json và thay '_' bằng khoảng trắng)
     return data, filename.rsplit('.', 1)[0].replace('_', ' ')
 
 def convert_movie_json(data, doc_name):
 
-    # Nếu là dict đơn lẻ thì chuyển thành list
     if isinstance(data, dict):
         data = [data]
     result = []
     for item in data:
-        # Ghép các trường thành page_content
         genres = ', '.join([g['name'] for g in item.get('genres', [])])
         keywords = ', '.join([k['name'] for k in item.get('keywords', [])])
         companies = ', '.join([c['name'] for c in item.get('production_companies', [])])
@@ -75,9 +72,7 @@ def convert_movie_json(data, doc_name):
     return result
 
 def ensure_metadata_fields(metadata, required_fields):
-    """
-    Đảm bảo metadata là dict và có đủ các trường cần thiết, nếu thiếu thì gán giá trị mặc định là ''.
-    """
+    
     if metadata is None:
         metadata = {}
     for field in required_fields:
@@ -87,7 +82,6 @@ def ensure_metadata_fields(metadata, required_fields):
 
 def seed_milvus(URI_link: str, collection_name: str, filename: str, directory: str, use_ollama: bool = False, data_type: str = "default") -> Milvus:
 
-    # Khởi tạo model embeddings tùy theo lựa chọn
     if use_ollama:
         embeddings = OllamaEmbeddings(
             model="llama2"  
@@ -95,10 +89,8 @@ def seed_milvus(URI_link: str, collection_name: str, filename: str, directory: s
     else:
         embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
     
-    # Đọc dữ liệu từ file local
     local_data, doc_name = load_data_from_local(filename, directory)
 
-    # Chuyển đổi dữ liệu thành danh sách các Document với giá trị mặc định cho các trường
     if data_type == "movie":
         processed_data = convert_movie_json(local_data, doc_name)
     else:
@@ -121,41 +113,29 @@ def seed_milvus(URI_link: str, collection_name: str, filename: str, directory: s
 
     print('documents: ', documents)
 
-    # Tạo ID duy nhất cho mỗi document
     uuids = [str(uuid4()) for _ in range(len(documents))]
 
-    # Khởi tạo và cấu hình Milvus
     vectorstore = Milvus(
         embedding_function=embeddings,
         connection_args={"uri": URI_link},
         collection_name=collection_name,
-        drop_old=True  # Xóa data đã tồn tại trong collection
+        drop_old=True  
     )
-    # Thêm documents vào Milvus
     vectorstore.add_documents(documents=documents, ids=uuids)
     print('vector: ', vectorstore)
     return vectorstore
 
 def seed_milvus_live(URL: str, URI_link: str, collection_name: str, doc_name: str, use_ollama: bool = False) -> Milvus:
-    """
-    Hàm crawl dữ liệu trực tiếp từ URL và tạo vector embeddings trong Milvus
-    Args:
-        URL (str): URL của trang web cần crawl dữ liệu
-        URI_link (str): Đường dẫn kết nối đến Milvus
-        collection_name (str): Tên collection trong Milvus
-        doc_name (str): Tên định danh cho tài liệu được crawl
-        use_ollama (bool): Sử dụng Ollama embeddings thay vì OpenAI
-    """
+
     if use_ollama:
         embeddings = OllamaEmbeddings(
-            model="llama2"  # hoặc model khác mà bạn đã cài đặt
+            model="llama2"  
         )
     else:
         embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
     
     documents = crawl_web(URL)
 
-    # Cập nhật metadata cho mỗi document với giá trị mặc định
     for doc in documents:
         metadata = {
             'source': doc.metadata.get('source') or '',
@@ -164,7 +144,6 @@ def seed_milvus_live(URL: str, URI_link: str, collection_name: str, doc_name: st
             'description': doc.metadata.get('description') or '',
             'language': doc.metadata.get('language') or 'en',
             'doc_name': doc_name,
-            # 'start_index': doc.metadata.get('start_index') or 0
         }
         doc.metadata = metadata
 
@@ -192,11 +171,9 @@ def connect_to_milvus(URI_link: str, collection_name: str) -> Milvus:
 
 def main():
 
-    # Test seed_milvus với dữ liệu local
     seed_milvus('http://localhost:19530', 'data_test', 'stack.json', 'data', use_ollama=False)
-    # Test seed_milvus_live với URL trực tiếp
-    # seed_milvus_live('https://www.stack-ai.com/docs', 'http://localhost:19530', 'data_test_live', 'stack-ai', use_ollama=False)
 
-# Chạy main() nếu file được thực thi trực tiếp
+
+
 if __name__ == "__main__":
     main()

@@ -8,9 +8,10 @@ from langchain_community.chat_message_histories import StreamlitChatMessageHisto
 from langchain.retrievers import EnsembleRetriever
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
+import asyncio
 
 
-def get_retriever(collection_name: str = "data_test") -> EnsembleRetriever:
+def get_retriever(collection_name: str = "movie") -> EnsembleRetriever:
     """
     Tạo một ensemble retriever kết hợp vector search (Milvus) và BM25
     Args:

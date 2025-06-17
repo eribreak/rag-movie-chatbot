@@ -8,55 +8,41 @@ from dotenv import load_dotenv
 
 load_dotenv()
 def bs4_extractor(html: str) -> str:
-    # Hàm trích xuất và làm sạch nội dung từ HTML
-    soup = BeautifulSoup(html, "html.parser")  # Phân tích cú pháp HTML
-    return re.sub(r"\n\n+", "\n\n", soup.text).strip()  # Xóa khoảng trắng và dòng trống thừa
+    soup = BeautifulSoup(html, "html.parser")
+    return re.sub(r"\n\n+", "\n\n", soup.text).strip()  
 
 def crawl_web(url_data):
-    # Tạo loader với độ sâu tối đa là 4 cấp
+   
     loader = RecursiveUrlLoader(url=url_data, extractor=bs4_extractor, max_depth=4)
-    docs = loader.load()  # Tải nội dung
-    print('length: ', len(docs))  # In số lượng tài liệu đã tải
+    docs = loader.load()  
+    print('length: ', len(docs))
     
-    # Chia nhỏ văn bản thành các đoạn 2500 ký tự, với 200 ký tự chồng lấp
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=2500, chunk_overlap=200)
     all_splits = text_splitter.split_documents(docs)
-    print('length_all_splits: ', len(all_splits))  # In số lượng đoạn văn bản sau khi chia
+    print('length_all_splits: ', len(all_splits)) 
     return all_splits
 
 def web_base_loader(url_data):
 
-    loader = WebBaseLoader(url_data)  # Tạo loader cơ bản
-    docs = loader.load()  # Tải nội dung
-    print('length: ', len(docs))  # In số lượng tài liệu
+    loader = WebBaseLoader(url_data)  
+    docs = loader.load() 
+    print('length: ', len(docs)) 
     
-    # Chia nhỏ văn bản tương tự như trên
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=2500, chunk_overlap=200)
     all_splits = text_splitter.split_documents(docs)
     return all_splits
 
 def save_data_locally(documents, filename, directory):
-    """
-    Lưu danh sách documents vào file JSON
-    Args:
-        documents (list): Danh sách các Document object cần lưu
-        filename (str): Tên file JSON (ví dụ: 'data.json')
-        directory (str): Đường dẫn thư mục lưu file
-    Returns:
-        None: Hàm không trả về giá trị, chỉ lưu file và in thông báo
-    """
-    # Tạo thư mục nếu chưa tồn tại
+
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    file_path = os.path.join(directory, filename)  # Tạo đường dẫn đầy đủ
+    file_path = os.path.join(directory, filename)  
 
-    # Chuyển đổi documents thành định dạng có thể serialize
     data_to_save = [{'page_content': doc.page_content, 'metadata': doc.metadata} for doc in documents]
-    # Lưu vào file JSON
     with open(file_path, 'w') as file:
         json.dump(data_to_save, file, indent=4)
-    print(f'Data saved to {file_path}')  # In thông báo lưu thành công
+    print(f'Data saved to {file_path}')  
 
 def main():
 
@@ -64,6 +50,6 @@ def main():
     save_data_locally(data, '', 'data')
     print('data: ', data) 
 
-# Kiểm tra nếu file được chạy trực tiếp
+
 if __name__ == "__main__":
     main()
